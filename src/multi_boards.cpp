@@ -62,6 +62,12 @@ class ArSysMultiBoards
 
 		tf::TransformListener _tfListener;
 
+		double min_marker_image_ratio;
+		double max_marker_image_ratio;
+		double first_threshold_param;
+		double second_threshold_param;
+		bool enable_erosion;
+
 	public:
 		ArSysMultiBoards()
 			: cam_info_received(false),
@@ -83,7 +89,16 @@ class ArSysMultiBoards
 			nh.param<bool>("draw_markers", draw_markers, false);
 			nh.param<bool>("draw_markers_cube", draw_markers_cube, false);
 			nh.param<bool>("draw_markers_axis", draw_markers_axis, false);
-            nh.param<bool>("publish_tf", publish_tf, false);
+			nh.param<bool>("publish_tf", publish_tf, false);
+			nh.param<double>("min_marker_image_ratio",min_marker_image_ratio,0.04);
+			nh.param<double>("max_marker_image_ratio",max_marker_image_ratio,0.5);
+			nh.param<double>("first_threshold_param",first_threshold_param,7.0);
+			nh.param<double>("second_threshold_param",second_threshold_param,7.0);
+			nh.param<bool>("enable_erosion",enable_erosion,true);
+
+			mDetector.setThresholdParams(first_threshold_param,second_threshold_param);
+			mDetector.setMinMaxSize(min_marker_image_ratio,max_marker_image_ratio);
+			mDetector.enableErosion(enable_erosion);
 
 			readFromFile(boards_config.c_str());
 			ROS_INFO("ArSys node started with boards configuration: %s", boards_config.c_str());

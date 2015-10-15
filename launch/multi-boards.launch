@@ -23,8 +23,13 @@
 
 	<arg name="boards_config" default="$(find ar_sys)/data/multi/boards.yml" />
 	<arg name="boards_directory" default="$(find ar_sys)/data/multi" />
-    <arg name="publish_tf" default="false" />
+	<arg name="publish_tf" default="false" />
 
+	<arg name="first_threshold_param" default="7.0" />
+	<arg name="second_threshold_param" default="7.0" />
+	<arg name="enable_erosion" default="true" />
+	<arg name="min_marker_image_ratio" default="0.04" />
+	<arg name="max_marker_image_ratio" default="0.5" />
 
 	<group if="$(arg camera_enable)">
 		<node ns="$(arg video_namespace)" pkg="image_proc" type="image_proc" name="image_proc$(arg uid)" />
@@ -48,7 +53,13 @@
 		<param name="draw_markers" type="bool" value="$(arg result_draw_markers)" />
 		<param name="draw_markers_cube" type="bool" value="$(arg result_draw_markers_cube)" />
 		<param name="draw_markers_axis" type="bool" value="$(arg result_draw_markers_axis)" />
-        <param name="publish_tf" value="$(arg publish_tf)" />
+		<param name="publish_tf" value="$(arg publish_tf)" />
+
+		<param name="first_threshold_param" type="double" value="$(arg first_threshold_param)" />
+		<param name="second_threshold_param" type="double" value="$(arg second_threshold_param)" />
+		<param name="enable_erosion" type="bool" value="$(arg enable_erosion)" />
+		<param name="min_marker_image_ratio" type="double" value="$(arg min_marker_image_ratio)" />
+		<param name="max_marker_image_ratio" type="double" value="$(arg max_marker_image_ratio)" />
 	</node>
 
 	<node ns="/" pkg="topic_tools" type="relay" name="ar_multi_boards_relay$(arg uid)" args="/ar_multi_boards$(arg uid)/transform /arsys_multi_boards/transform" />

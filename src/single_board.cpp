@@ -33,7 +33,7 @@ class ArSysSingleBoard
 		bool draw_markers;
 		bool draw_markers_cube;
 		bool draw_markers_axis;
-        bool publish_tf;
+		bool publish_tf;
 		MarkerDetector mDetector;
 		vector<Marker> markers;
 		BoardConfiguration the_board_config;
@@ -57,6 +57,14 @@ class ArSysSingleBoard
 
 		tf::TransformListener _tfListener;
 
+		double min_marker_image_ratio;
+		double max_marker_image_ratio;
+		double first_threshold_param;
+		double second_threshold_param;
+		bool enable_erosion;
+
+		bool publish_inverse_transform;
+
 	public:
 		ArSysSingleBoard()
 			: cam_info_received(false),
@@ -79,7 +87,17 @@ class ArSysSingleBoard
 			nh.param<bool>("draw_markers", draw_markers, false);
 			nh.param<bool>("draw_markers_cube", draw_markers_cube, false);
 			nh.param<bool>("draw_markers_axis", draw_markers_axis, false);
-            nh.param<bool>("publish_tf", publish_tf, false);
+			nh.param<bool>("publish_tf", publish_tf, false);
+			nh.param<double>("min_marker_image_ratio",min_marker_image_ratio,0.04);
+			nh.param<double>("max_marker_image_ratio",max_marker_image_ratio,0.5);
+			nh.param<double>("first_threshold_param",first_threshold_param,7.0);
+			nh.param<double>("second_threshold_param",second_threshold_param,7.0);
+			nh.param<bool>("enable_erosion",enable_erosion,true);
+			nh.param<bool>("publish_inverse_transform",publish_inverse_transform,false);
+
+			mDetector.setThresholdParams(first_threshold_param,second_threshold_param);
+			mDetector.setMinMaxSize(min_marker_image_ratio,max_marker_image_ratio);
+			mDetector.enableErosion(enable_erosion);
 
 			the_board_config.readFromFile(board_config.c_str());
 
@@ -89,7 +107,7 @@ class ArSysSingleBoard
 
 		void image_callback(const sensor_msgs::ImageConstPtr& msg)
 		{
-            static tf::TransformBroadcaster br;
+			static tf::TransformBroadcaster br;
             
 			if(!cam_info_received) return;
 
@@ -110,14 +128,23 @@ class ArSysSingleBoard
 				{
 					tf::Transform transform = ar_sys::getTf(the_board_detected.Rvec, the_board_detected.Tvec);
 
-					tf::StampedTransform stampedTransform(transform, msg->header.stamp, msg->header.frame_id, board_frame);
-                    
-                    if (publish_tf) 
-                        br.sendTransform(stampedTransform);
+					std::string parentFrame = msg->header.frame_id;
+					std::string childFrame = board_frame;
+
+					if(publish_inverse_transform){
+						parentFrame = board_frame;
+						childFrame = msg->header.frame_id;
+						transform = transform.inverse();
+					}
+
+					tf::StampedTransform stampedTransform(transform, msg->header.stamp, parentFrame, childFrame);
+
+					if (publish_tf)
+						br.sendTransform(stampedTransform);
 
 					geometry_msgs::PoseStamped poseMsg;
 					tf::poseTFToMsg(transform, poseMsg.pose);
-					poseMsg.header.frame_id = msg->header.frame_id;
+					poseMsg.header.frame_id = parentFrame;
 					poseMsg.header.stamp = msg->header.stamp;
 					pose_pub.publish(poseMsg);
 
